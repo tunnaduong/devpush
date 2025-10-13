@@ -167,24 +167,26 @@ sudo docker run hello-world
 sudo docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
 ```
 
-#### 3.3 Créer l'utilisateur devpush
+#### 3.3 Configurer l'utilisateur didier
 
 ```bash
-# Créer l'utilisateur
-sudo useradd -m -U -s /bin/bash -G sudo,docker devpush
+# Ajouter l'utilisateur didier au groupe docker (si pas déjà fait)
+sudo usermod -aG docker didier
 
-# Créer le dossier SSH
-sudo mkdir -p /home/devpush/.ssh
-sudo chmod 700 /home/devpush/.ssh
+# Créer le dossier SSH (si pas déjà fait)
+sudo mkdir -p /home/didier/.ssh
+sudo chmod 700 /home/didier/.ssh
 
-# Copier vos clés SSH (optionnel)
-sudo cp ~/.ssh/authorized_keys /home/devpush/.ssh/
-sudo chown -R devpush:devpush /home/devpush/.ssh
-sudo chmod 600 /home/devpush/.ssh/authorized_keys
+# Copier vos clés SSH (optionnel - ignorez si le fichier n'existe pas)
+if [ -f ~/.ssh/authorized_keys ]; then
+  sudo cp ~/.ssh/authorized_keys /home/didier/.ssh/
+  sudo chown -R didier:didier /home/didier/.ssh
+  sudo chmod 600 /home/didier/.ssh/authorized_keys
+fi
 
 # Donner les droits sudo sans mot de passe
-echo "devpush ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/devpush
-sudo chmod 440 /etc/sudoers.d/devpush
+echo "didier ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/didier
+sudo chmod 440 /etc/sudoers.d/didier
 ```
 
 #### 3.4 Créer les répertoires de données
@@ -198,10 +200,7 @@ sudo chmod 755 /srv/devpush/traefik /srv/devpush/upload
 #### 3.5 Cloner le repository
 
 ```bash
-# Passer à l'utilisateur devpush
-sudo -iu devpush
-
-# Cloner le projet
+# En tant qu'utilisateur didier
 cd ~
 git clone https://github.com/hunvreus/devpush.git
 cd devpush
@@ -266,7 +265,7 @@ GITHUB_APP_CLIENT_SECRET="..."
 #### 3.8 Construire les images runner (peut prendre du temps)
 
 ```bash
-# Toujours en tant qu'utilisateur devpush
+# Toujours en tant qu'utilisateur didier
 cd ~/devpush
 
 # Construire les images runner (ARM64)
@@ -367,8 +366,7 @@ Redirigez les ports vers votre Raspberry Pi :
 ## Étape 6 : Démarrer /dev/push
 
 ```bash
-# En tant qu'utilisateur devpush
-sudo -iu devpush
+# En tant qu'utilisateur didier
 cd ~/devpush
 
 # Démarrer avec migrations
@@ -482,7 +480,6 @@ sudo systemctl stop nginx
 ### Mettre à jour /dev/push
 
 ```bash
-sudo -iu devpush
 cd ~/devpush
 ./scripts/prod/update.sh --all
 ```
@@ -494,7 +491,7 @@ cd ~/devpush
 docker compose exec postgres pg_dump -U devpush-app devpush > backup.sql
 
 # Sauvegarder les fichiers
-sudo tar czf devpush-backup.tar.gz /srv/devpush ~/devpush/.env
+sudo tar czf devpush-backup.tar.gz /srv/devpush /home/didier/devpush/.env
 ```
 
 ### Surveiller les logs
